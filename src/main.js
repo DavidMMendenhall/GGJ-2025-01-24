@@ -35,6 +35,9 @@ const level = await fetch("/levels/keyhole.svg")
     .then((resp) => resp.text())
     .then((text) => svgImport(text));
 
+/** @type {Set<import("./webgl/graphics.js").GlobRenderData>} */
+const particleGlobs = new Set();
+
 const resizeCanvas = () => {
     main2dCanvas.width = main2dCanvas.getBoundingClientRect().width;
     main2dCanvas.height = main2dCanvas.getBoundingClientRect().height;
@@ -304,6 +307,15 @@ const frame = (timeMs) => {
                     futurePositionDirection[1] * 8 * level.playerRadius,
             ];
             player = futurePlayer;
+            for(let k = 0; k < 10; k++){
+                particleGlobs.add(
+                    {
+                        position:[(Math.random() * 2 - 1) * player.r + player.x, (Math.random() * 2 - 1) * player.r + player.y],
+                        radii: [player.r, player.r * 1.2],
+                        color: [1, 1, 1],
+                    }
+                )
+            }
             futurePlayer = null;
         }
     }
@@ -330,8 +342,17 @@ const frame = (timeMs) => {
             for(let i = 0; i < balls.length; i++){
                 if(index != i && ball.collisionCheck_ball(balls[i]) && balls[i].coolDownMs === 0 && balls[i] !== player && !ballsToRemove.has(balls[i]) ){
                     ballsToRemove.add(balls[i]);
-                    ball.r *= Math.sqrt(2);
+                    ball.r = Math.sqrt(ball.r **2 + balls[i].r ** 2);
                     ball.coolDownMs = 1000;
+                    for(let k = 0; k < 10; k++){
+                        particleGlobs.add(
+                            {
+                                position:[(Math.random() * 2 - 1) * ball.r + ball.x, (Math.random() * 2 - 1) * ball.r + ball.y],
+                                radii: [ball.r, ball.r * 1.2],
+                                color: [1, 1, 1],
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -348,6 +369,16 @@ const frame = (timeMs) => {
         }
 
     }
+    let globsToRemove = new Set();
+    particleGlobs.forEach((glob) => {
+        glob.radii[0] *= 0.95;
+        glob.radii[1] *= 0.95;
+        if(glob.radii[0] < 0.00001){
+            globsToRemove.add(glob);
+        }
+    })
+
+    globsToRemove.forEach((g) => particleGlobs.delete(g));
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 };
@@ -378,11 +409,11 @@ const draw = (deltaMs) => {
     Graphics.drawGlobs(
         gl,
         camera.getMatrix(),
-        balls.map((ball) => ({
+        [...balls.map((ball) => ({
             position: ball.center,
             radii: [ball.r, ball.r * 2],
             color: ball === player ? [0.5,1,0.5]:[0.5,0.25,0.25]
-        })),
+        })), ...particleGlobs.values()],
         deltaMs,
         main2dCanvas
     );
