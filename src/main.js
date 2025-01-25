@@ -1,5 +1,6 @@
 // @ts-check
 
+// @ts-ignore
 window.DEBUG = false;
 
 import {
@@ -49,6 +50,7 @@ let marblePattern = null;
 let marbleImage = new Image();
 marbleImage.onload = () => {
     marblePattern = ctx.createPattern(marbleImage, "repeat");
+    // @ts-ignore
     marblePattern.setTransform({a: 0.25, d: 0.25});
 };
 marbleImage.src = "/images/marble.jpg";
@@ -455,6 +457,7 @@ const draw = (deltaMs) => {
     }
     ctx.restore();
 
+    // @ts-ignore
     if (window.DEBUG) {
         ctx.strokeStyle = "#555";
         myCollisions.arcs.forEach((ad) => {
