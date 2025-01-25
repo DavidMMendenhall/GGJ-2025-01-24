@@ -57,7 +57,12 @@ let myLines = lineData.map((ld)=>line(ld[0], ld[1]));
 // let myArc = arc([arcData[0], arcData[1]], arcData[2], arcData[3], arcData[4]);
 let myArcs = arcData.map( ad => arc([ad[0], ad[1]], ad[2], ad[3], ad[4]));
 
-let myBall = ball([0, 0], 0.25);
+let player = ball([0, 0], 0.25);
+let balls = [player];
+
+let isYeet = false;
+let futurePlayer = null;
+let futurePositionDirection = [0, 0];
 
 let oldTime = -1;
 /**
@@ -76,15 +81,41 @@ const frame = (timeMs) => {
 
     controls.update(deltaTimeMs);
     if(controls.held.has("R1")){
-        myBall.velocity = [0, 0]
-        myBall.center = [0, 0]
+        player.velocity = [0, 0]
+        player.center = [0, 0]
     }
+
     if(controls.held.has("L1")){
-        myBall.velocity = [0, 0];
+        player.velocity = [0, 0];
     }
-    myBall.ax += controls.leftStick[0];
-    myBall.ay += controls.leftStick[1];
-    myBall.update(deltaTimeMs, [...myArcs, ...myLines], [0, -0.25]);
+
+    if(controls.pressed.has("R2")){
+        futurePlayer = ball([player.x, player.y], player.r / Math.sqrt(2));
+        player.r = player.r / Math.sqrt(2)
+
+        balls.push(futurePlayer);
+    }
+
+    if(futurePlayer){
+        let heldDirection = controls.rightStick;
+        let magnitude = Math.sqrt(heldDirection[0] ** 2 + heldDirection[1] ** 2);
+        if (magnitude > 0.2){
+            futurePositionDirection = [heldDirection[0] / magnitude, heldDirection[1] / magnitude];
+        }
+        futurePlayer.center = [player.x + futurePositionDirection[0] * player.r, player.y + futurePositionDirection[1] * player.r];
+        if(!controls.held.has("R2")){
+            // yeet
+            futurePlayer.velocity = [futurePositionDirection[0] * 2, futurePositionDirection[1] * 2];
+            player = futurePlayer;
+            futurePlayer = null;
+        }
+    }
+    
+    player.ax += controls.leftStick[0];
+    player.ay += controls.leftStick[1];
+    balls.forEach(element => {
+        element.update(deltaTimeMs, [...myArcs, ...myLines], [0, -0.25]);
+    });
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 
@@ -97,8 +128,11 @@ const frame = (timeMs) => {
 const draw = (deltaMs) => {
     clear();
     ctx.save();
-    ctx.translate(-myBall.x, -myBall.y);
-    drawBall(myBall, "green");
+    ctx.translate(-player.x, -player.y);
+    // drawBall(player, "green");
+    balls.forEach(element => {
+        drawBall(element, "green");
+    });
     ctx.lineCap = "round";
     ctx.lineWidth = 0.05;
     arcData.forEach(ad => {
