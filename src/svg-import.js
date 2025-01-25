@@ -2,10 +2,27 @@ import {line, arc} from "./physics/collision.js";
 const parser = new DOMParser();
 
 /**
- * @typedef SVGExportedInfo
+ * @typedef SVGLevel
  * @property {SVGCollisions} collisionObjects
- * @property {Path2D} pathObjects
+ * @property {SVGCollisions} killObjects
+ * @property {Path2D[]} pathObjects
+ * @property {number[]} bounds
+ * @property {number[]} spawnpoint
+ * @property {number} playerRadius
  */
+
+/**
+ * @param {SVGRectElement} rect
+ * @returns {number[]}
+ */
+function getRectBounds(rect) {
+	const x1 = rect.x.baseVal.value;
+	const y1 = rect.y.baseVal.value;
+	const x2 = x1 + rect.width.baseVal.value;
+	const y2 = y1 + rect.height.baseVal.value;
+
+	return [x1, y1, x2, y2];
+}
 
 
 /**
@@ -71,10 +88,7 @@ export function svgGetCollisions(group) {
 	};
 
 	for (const rect of group.getElementsByTagName("rect")) {
-		const x1 = rect.x.baseVal.value;
-		const y1 = rect.y.baseVal.value;
-		const x2 = x1 + rect.width.baseVal.value;
-		const y2 = y1 + rect.height.baseVal.value;
+		const [x1, y1, x2, y2] = getRectBounds(rect);
 
 		result.lines.push(
 			line([x1, -y1], [x2, -y1]),
@@ -176,7 +190,7 @@ export function svgGetCollisions(group) {
 						numbersBuffer[0] += previousCoords[0];
 						numbersBuffer[1] += previousCoords[1];
 					case 'L':
-						result.lines.push(line([previousCoords[0], -previousCoords[1]], [numbersBuffer[0], -previousCoords[0]]));
+						result.lines.push(line([previousCoords[0], -previousCoords[1]], [numbersBuffer[0], -numbersBuffer[1]]));
 						previousCoords = [...numbersBuffer];
 						break;
 					case 'a':
@@ -200,10 +214,10 @@ export function svgGetCollisions(group) {
 							radiusX,
 						)
 
-						const center = sweep == 0 ? center2 : center1;
+						const center = sweep == 0 ? center1 : center2;
 
-						const angleCtoS = Math.atan2(center1[1] - startY, center1[0] - startX);
-						const angleCtoE = Math.atan2(center1[1] - endY, center1[0] - endX);
+						let angleCtoS = Math.atan2(center1[1] - startY, center1[0] - startX);
+						let angleCtoE = Math.atan2(center1[1] - endY, center1[0] - endX);
 
 						if (angleCtoE - angleCtoS > Math.PI) {
 							if (!large) {
@@ -237,18 +251,37 @@ export function svgGetCollisions(group) {
 
 /**
  * @param {string} svgText
- * @returns {SVGExportedInfo}
+ * @returns {SVGLevel}
  */
 export function svgImport(svgText) {
 	const svgDocument = parser.parseFromString(svgText, "text/xml");
 
-	const groups = svgDocument.getElementsByTagName("g");
+	const boundsRect = Array.from(svgDocument.getElementsByTagName("rect"))
+		.filter(r => r.getAttribute("inkscape:label") == "bounds")[0];
 
-	/** @type SVGExportedInfo */
+	const [bx1, by1, bx2, by2] = getRectBounds(boundsRect);
+
+	const spawnCircle = Array.from(svgDocument.getElementsByTagName("circle"))
+		.filter(c => c.getAttribute("inkscape:label") == "spawn")[0];
+
+	const spawnpoint = [
+		spawnCircle.cx.baseVal.value,
+		-spawnCircle.cy.baseVal.value,
+	];
+
+	const playerRadius = spawnCircle.r.baseVal.value;
+
+	/** @type SVGLevel */
 	const result = {
 		collisionObjects: null,
+		killObjects: null,
 		pathObjects: [],
+		bounds: [bx1, -by1, bx2, -by2],
+		spawnpoint,
+		playerRadius
 	}
+
+	const groups = svgDocument.getElementsByTagName("g");
 
 	for (const group of groups) {
 		let label = group.getAttribute("inkscape:label");
@@ -256,6 +289,15 @@ export function svgImport(svgText) {
 		switch (label) {
 			case "collision":
 				result.collisionObjects = svgGetCollisions(group);
+				break;
+			case "render":
+				for (const path of group.getElementsByTagName("path")) {
+					result.pathObjects.push(new Path2D(path.getAttribute("d")));
+				}
+				break;
+			case "kill":
+				result.killObjects = svgGetCollisions(group);
+				break;
 		}
 	}
 

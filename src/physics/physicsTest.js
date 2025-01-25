@@ -15,6 +15,10 @@ document.body.appendChild(main2dCanvas);
 // @ts-ignore
 const ctx = main2dCanvas.getContext("2d");
 
+const level = await fetch("/levels/keyhole.svg")
+	.then(resp => resp.text())
+	.then(text => svgImport(text));
+
 const resizeCanvas = () => {
     main2dCanvas.width = main2dCanvas.getBoundingClientRect().width;
     main2dCanvas.height = main2dCanvas.getBoundingClientRect().height;
@@ -23,7 +27,7 @@ const resizeCanvas = () => {
     const height = main2dCanvas.height;
     ctx.translate(width / 2, height / 2);
     // Scale to normalize the coordinate space to -1 to 1
-    ctx.scale(height / 2, -height / 2);
+    ctx.scale(height / 16 / level.playerRadius, -height / 16 / level.playerRadius);
     // ctx.fillRect(0, 0, 0.5, 0.5);
 };
 
@@ -53,11 +57,9 @@ const drawBall = (ball, color) => {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-let myCollisions = await fetch("/levels/test-level.svg")
-	.then(resp => resp.text())
-	.then(text => svgImport(text).collisionObjects);
+const myCollisions = level.collisionObjects;
 
-let player = ball([0, 0], 0.25);
+let player = ball(level.spawnpoint, level.playerRadius);
 let balls = [player];
 
 let isYeet = false;
@@ -105,16 +107,19 @@ const frame = (timeMs) => {
         futurePlayer.center = [player.x + futurePositionDirection[0] * player.r, player.y + futurePositionDirection[1] * player.r];
         if(!controls.held.has("R2")){
             // yeet
-            futurePlayer.velocity = [futurePositionDirection[0] * 2, futurePositionDirection[1] * 2];
+            futurePlayer.velocity = [
+                player.velocity[0] + futurePositionDirection[0] * 8 * level.playerRadius,
+                player.velocity[1] + futurePositionDirection[1] * 8 * level.playerRadius
+            ];
             player = futurePlayer;
             futurePlayer = null;
         }
     }
     
-    player.ax += controls.leftStick[0];
-    player.ay += controls.leftStick[1];
+    player.ax += controls.leftStick[0] * 2 * level.playerRadius;
+    player.ay += controls.leftStick[1] * 2 * level.playerRadius;
     balls.forEach(element => {
-        element.update(deltaTimeMs, [...myCollisions.lines, ...myCollisions.arcs], [0, -0.25]);
+        element.update(deltaTimeMs, [...myCollisions.lines, ...myCollisions.arcs], [0, -level.playerRadius]);
     });
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
@@ -134,7 +139,7 @@ const draw = (deltaMs) => {
         drawBall(element, "green");
     });
     ctx.lineCap = "round";
-    ctx.lineWidth = 0.005;
+    ctx.lineWidth = 0.05;
     myCollisions.arcs.forEach(ad => {
         ctx.beginPath();
         ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
