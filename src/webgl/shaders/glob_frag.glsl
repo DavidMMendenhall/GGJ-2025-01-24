@@ -4,6 +4,7 @@ in vec2 f_uv;
 out vec4 o_color;
 uniform sampler2D u_density;
 uniform sampler2D u_background;
+uniform float u_time;
 void main(){
     vec3 lightDir = normalize(vec3(-1.0, -1.0, -0.5));
     vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
@@ -30,7 +31,7 @@ void main(){
     if (value.r < 0.55){
         spec = 1.0;
     }
-    vec3 color = vec3(sin(f_uv.x * 3.14 * 8.0 + f_uv.y), sin(f_uv.y * f_uv.x * 3.14 * 7.0 + 4.0 * f_uv.x ), sin(f_uv.x * 3.14 * 7.0 + 6.0));
+    vec3 color = vec3(sin(f_uv.x * 3.14 * 8.0 + f_uv.y + u_time), sin(f_uv.y * f_uv.x * 3.14 * 7.0 + 4.0 * f_uv.x + u_time), sin(f_uv.x * 3.14 * 7.0 + 6.0 + u_time));
     // color.r = 1.0;
     //diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir))
     o_color = vec4( mix(bg, normalize(abs(color))* (diffuse + spec + 0.1), diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir))), 1.0);

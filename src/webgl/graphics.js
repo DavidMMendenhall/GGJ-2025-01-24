@@ -234,6 +234,7 @@ const startWebgl = async (gl) => {
         programs.glob,
         "u_background"
     );
+    uniforms.time = gl.getUniformLocation(programs.glob, "u_time");
     gl.uniform1i(uniforms.backgroundTexture, 1);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, textures.background);
@@ -280,13 +281,15 @@ const resize = (gl) => {
  *
  */
 
+let time = 0;
 /**
  *
  * @param {WebGL2RenderingContext} gl
  * @param {number[]} cameraMatrix
  * @param {GlobRenderData[]} globs
  */
-const drawGlobs = (gl, cameraMatrix, globs, backgroundSource) => {
+const drawGlobs = (gl, cameraMatrix, globs, deltaTimeMs,  backgroundSource) => {
+    time += deltaTimeMs / 1000;
     let globModelData = new Float32Array(9 * globs.length);
     let globRadiiData = new Float32Array(2 * globs.length);
     let globCenterData = new Float32Array(2 * globs.length);
@@ -372,6 +375,7 @@ const drawGlobs = (gl, cameraMatrix, globs, backgroundSource) => {
         backgroundSource
     );
     gl.useProgram(programs.glob);
+    gl.uniform1f(uniforms.time, time);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
 

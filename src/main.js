@@ -49,7 +49,7 @@ const camera = (() => {
     let target = [0, 0];
     let targetFrameHard = 0.75;
     let targetFrameSoft = 0.5;
-    let frameSize = 10;
+    let frameSize = 3;
     let zoom = 2 / frameSize;
 
     let getMatrix = () => {
@@ -251,7 +251,7 @@ const draw = (deltaMs) => {
     ctx.fillStyle = "orange";
     ctx.fillRect(ob[0], ob[1], 0.05, 0.05);
     camera.renderDebug();
-    Graphics.drawGlobs(gl, camera.getMatrix(), testGlobs, main2dCanvas)
+    Graphics.drawGlobs(gl, camera.getMatrix(), testGlobs,deltaMs, main2dCanvas)
     ctx.restore();
 };
 
