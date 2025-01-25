@@ -34,5 +34,5 @@ void main(){
     vec3 color = vec3(sin(f_uv.x * 3.14 * 8.0 + f_uv.y + u_time), sin(f_uv.y * f_uv.x * 3.14 * 7.0 + 4.0 * f_uv.x + u_time), sin(f_uv.x * 3.14 * 7.0 + 6.0 + u_time));
     // color.r = 1.0;
     //diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir))
-    o_color = vec4( mix(bg, normalize(abs(color))* (diffuse + spec + 0.1), diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir))), 1.0);
+    o_color = vec4( mix(bg, (normalize(abs(color)) + vec3(0.5))* (diffuse + spec + 0.1), (diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir) + 0.2))), 1.0);
 }

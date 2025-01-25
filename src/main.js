@@ -5,11 +5,14 @@ import {
     vectorMatrix3x3Multiply,
 } from "./matrix.js";
 import { Graphics} from "./webgl/graphics.js";
+
+
 const main2dCanvas = document.createElement("canvas");
 document.body.appendChild(main2dCanvas);
 const mainWebGLCanvas = document.createElement("canvas");
 document.body.appendChild(mainWebGLCanvas);
 mainWebGLCanvas.style.zIndex = "5";
+
 /** @type {CanvasRenderingContext2D} */
 // @ts-ignore
 const ctx = main2dCanvas.getContext("2d");
@@ -17,6 +20,12 @@ const ctx = main2dCanvas.getContext("2d");
 // @ts-ignore
 const gl = mainWebGLCanvas.getContext("webgl2");
 
+let backgroundPattern = null;
+let backgroundImage = new Image();
+backgroundImage.onload = () => {
+    backgroundPattern = ctx.createPattern(backgroundImage, "repeat");
+}
+backgroundImage.src = "/images/background.png";
 
 const resizeCanvas = () => {
     main2dCanvas.width = main2dCanvas.getBoundingClientRect().width;
@@ -38,7 +47,11 @@ const clear = () => {
     ctx.save();
     ctx.resetTransform();
     // ctx.clearRect(0, 0, main2dCanvas.width, main2dCanvas.height);
-    ctx.fillStyle = "#FFFFFF";
+    if(backgroundPattern){
+        ctx.fillStyle = backgroundPattern;
+    }else{
+        ctx.fillStyle = "#FFFFFF";
+    }
     ctx.fillRect(0, 0, main2dCanvas.width, main2dCanvas.height);
     ctx.restore();
     // TODO code to clear other canvases
@@ -250,7 +263,7 @@ const draw = (deltaMs) => {
     ctx.fillRect(0, 0, 1, 1);
     ctx.fillStyle = "orange";
     ctx.fillRect(ob[0], ob[1], 0.05, 0.05);
-    camera.renderDebug();
+    // camera.renderDebug();
     Graphics.drawGlobs(gl, camera.getMatrix(), testGlobs,deltaMs, main2dCanvas)
     ctx.restore();
 };
