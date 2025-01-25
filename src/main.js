@@ -236,6 +236,7 @@ let balls = [player];
 let futurePlayer = null;
 let futurePositionDirection = [0, 0];
 let oldTime = -1;
+let playerOnGround = false;
 /**
  *
  * @param {number} timeMs
@@ -266,12 +267,13 @@ const frame = (timeMs) => {
         player.velocity = [0, 0];
     }
 
-    if (controls.pressed.has("R2")) {
+    if (controls.pressed.has("R2") && playerOnGround) {
         futurePlayer = CollisionGenerator.ball(
             [player.x, player.y],
             player.r / Math.sqrt(2)
         );
         player.r = player.r / Math.sqrt(2);
+        futurePlayer.coolDownMs = 1000;
 
         balls.push(futurePlayer);
     }
@@ -291,6 +293,8 @@ const frame = (timeMs) => {
             player.x + futurePositionDirection[0] * player.r,
             player.y + futurePositionDirection[1] * player.r,
         ];
+        futurePlayer.coolDownMs = 1000;
+        player.coolDownMs = 1000;
         if (!controls.held.has("R2")) {
             // yeet
             futurePlayer.velocity = [
@@ -306,16 +310,44 @@ const frame = (timeMs) => {
 
     camera.target = player.center;
     camera.update(deltaTimeMs);
-
+    let verticalAcceleration = controls.leftStick[1] * 2 * level.playerRadius;
+    if(verticalAcceleration > 0 && !playerOnGround){
+        verticalAcceleration *= 0.5;
+    }
     player.ax += controls.leftStick[0] * 2 * level.playerRadius;
-    player.ay += controls.leftStick[1] * 2 * level.playerRadius;
-    balls.forEach((element) => {
-        element.update(
+    player.ay += verticalAcceleration;
+    let ballsToRemove = new Set();
+    balls.forEach((ball, index) => {
+        let result = ball.update(
             deltaTimeMs,
             [...myCollisions.lines, ...myCollisions.arcs],
             [0, -level.playerRadius]
         );
+        if (ball === player){
+            playerOnGround = result;
+        }
+        if(!ballsToRemove.has(ball) && ball.coolDownMs === 0){
+            for(let i = 0; i < balls.length; i++){
+                if(index != i && ball.collisionCheck_ball(balls[i]) && balls[i].coolDownMs === 0 && balls[i] !== player && !ballsToRemove.has(balls[i]) ){
+                    ballsToRemove.add(balls[i]);
+                    ball.r *= Math.sqrt(2);
+                    ball.coolDownMs = 1000;
+                }
+            }
+        }
+        
     });
+
+  
+    for(let i = 0; i < balls.length; i++){
+        if(ballsToRemove.has(balls[i])){
+            balls.splice(i, 1);
+            i--;
+            ballsToRemove.delete(balls[i])
+
+        }
+
+    }
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 };

@@ -197,8 +197,9 @@ let arc = (center, radius, arcStart, arcEnd) => {
  * @prop {number} ax
  * @prop {number} ay
  * @prop {number} r
+ * @prop {number} coolDownMs
  * @prop {(ball:Ball) => boolean} collisionCheck_ball
- * @prop {(deltaMs:number, geometry:Collision[], gravity:number[]) => void} update
+ * @prop {(deltaMs:number, geometry:Collision[], gravity:number[]) => boolean} update
  * @prop {number[]} center 
  * @prop {number[]} acceleration
  * @prop {number[]} velocity
@@ -214,6 +215,7 @@ let ball = ([x, y], r) => {
     const snapEscapeSpeed = 0.1;
     const snapForce = 5;
     const airResistance = 0.5;
+    let coolDownMs = 0;
     let ax = 0;
     let ay = 0;
     let vx = 0;
@@ -235,6 +237,12 @@ let ball = ([x, y], r) => {
      */
     const update = (deltaMs, geometry, gravity) => {
         const delta = deltaMs /  1000;
+        if(coolDownMs > 0){
+            coolDownMs -= deltaMs;
+        }
+        if(coolDownMs < 0){
+            coolDownMs = 0;
+        }
         x += vx * delta / 2;
         y += vy * delta / 2;
         vx += ax * delta;
@@ -249,6 +257,7 @@ let ball = ([x, y], r) => {
         let snapForceX = 0;
         let snapForceY = 0;
         let forceDistance = Infinity;
+        let touchingGround = false;
 
         let speed = Math.sqrt(vx ** 2 + vy ** 2);
         geometry.forEach((collision) => {
@@ -263,6 +272,7 @@ let ball = ([x, y], r) => {
 
                 vx -= comp[0];
                 vy -= comp[1];
+                touchingGround = true;
             } 
             if(collision.distance([x, y]) < r + snapDistance){
                 let d = Math.abs(collision.distance([x, y]));
@@ -289,6 +299,7 @@ let ball = ([x, y], r) => {
         }
         ax += snapForceX;
         ay += snapForceY;
+        return touchingGround;
     }
 
     return {
@@ -351,6 +362,12 @@ let ball = ([x, y], r) => {
         },
         set vy(value){
             vy = value;
+        },
+        get coolDownMs(){
+            return coolDownMs;
+        },
+        set coolDownMs(value){
+            coolDownMs = value;
         },
         collisionCheck_ball,
         update,
