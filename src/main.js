@@ -53,14 +53,27 @@ const resizeCanvas = () => {
 
 const clear = () => {
     ctx.save();
-    ctx.resetTransform();
+    // ctx.resetTransform();
+    camera.applyMatrix();
+    let mat=camera.getInverse();
+    let top_left = vectorMatrix3x3Multiply(mat, [-1, 1]);
+    let down_left = vectorMatrix3x3Multiply(mat, [-1, -1]);
+    let down_right = vectorMatrix3x3Multiply(mat, [1, -1]);
+    let top_right = vectorMatrix3x3Multiply(mat, [1, 1]);
+
     // ctx.clearRect(0, 0, main2dCanvas.width, main2dCanvas.height);
     if (backgroundPattern) {
         ctx.fillStyle = backgroundPattern;
     } else {
         ctx.fillStyle = "#FFFFFF";
     }
-    ctx.fillRect(0, 0, main2dCanvas.width, main2dCanvas.height);
+    ctx.beginPath();
+    ctx.moveTo(top_left[0], top_left[1]);
+    ctx.lineTo(top_right[0], top_right[1]);
+    ctx.lineTo(down_right[0], down_right[1]);
+    ctx.lineTo(down_left[0], down_left[1]);
+    // ctx.fillRect(0, 0, main2dCanvas.width, main2dCanvas.height);
+    ctx.fill();
     ctx.restore();
     // TODO code to clear other canvases
 };
@@ -69,7 +82,7 @@ const camera = (() => {
     let position = [0.5, 0.5];
     let target = [0, 0];
     let targetFrameHard = 0.75;
-    let targetFrameSoft = 0.5;
+    let targetFrameSoft = 0.25;
     let frameSize = 3;
     let zoom = 2 / frameSize;
 
@@ -174,22 +187,22 @@ const camera = (() => {
         if (target[0] < softFrame[0][0]) {
             // left of frame
             position[0] +=
-                (target[0] - softFrame[0][0]) * (deltaMs / 1000) * frameSize;
+                (target[0] - softFrame[0][0]) * (deltaMs / 300);
         }
         if (target[0] > softFrame[1][0]) {
             // right of frame
             position[0] +=
-                (target[0] - softFrame[1][0]) * (deltaMs / 1000) * frameSize;
+                (target[0] - softFrame[1][0]) * (deltaMs / 300);
         }
         if (target[1] < softFrame[0][1]) {
             // below the frame
             position[1] +=
-                (target[1] - softFrame[0][1]) * (deltaMs / 1000) * frameSize;
+                (target[1] - softFrame[0][1]) * (deltaMs / 300);
         }
         if (target[1] > softFrame[1][1]) {
             // above frame
             position[1] +=
-                (target[1] - softFrame[1][1]) * (deltaMs / 1000) * frameSize;
+                (target[1] - softFrame[1][1]) * (deltaMs / 300);
         }
     };
     return {
@@ -216,18 +229,6 @@ const camera = (() => {
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-
-// let ob = [0, 0];
-// let testGlobs = [];
-// let testGlobsVel = [];
-
-// for(let i = 0; i < 100; i++){
-//     testGlobs.push({
-//         radii:[0.2, 0.3],
-//         position:[Math.random(), Math.random()],
-//     })
-//     testGlobsVel.push([Math.random(), Math.random()])
-// }
 
 const myCollisions = level.collisionObjects;
 let player = CollisionGenerator.ball(level.spawnpoint, level.playerRadius);
@@ -301,23 +302,6 @@ const frame = (timeMs) => {
     camera.target = player.center;
     camera.update(deltaTimeMs);
 
-    // testGlobs.forEach((glob, index)=>{
-    //     glob.position[0] += deltaTimeMs / 1000 * testGlobsVel[index][0];
-    //     glob.position[1] += deltaTimeMs / 1000 * testGlobsVel[index][1];
-
-    //     if(glob.position[0] > 3){
-    //         testGlobsVel[index][0] = -Math.abs(testGlobsVel[index][0]);
-    //     }
-    //     if(glob.position[0] < -3){
-    //         testGlobsVel[index][0] = Math.abs(testGlobsVel[index][0]);
-    //     }
-    //     if(glob.position[1] > 3){
-    //         testGlobsVel[index][1] = -Math.abs(testGlobsVel[index][1]);
-    //     }
-    //     if(glob.position[1] < -3){
-    //         testGlobsVel[index][1] = Math.abs(testGlobsVel[index][1]);
-    //     }
-    // })
     player.ax += controls.leftStick[0] * 2 * level.playerRadius;
     player.ay += controls.leftStick[1] * 2 * level.playerRadius;
     balls.forEach((element) => {
