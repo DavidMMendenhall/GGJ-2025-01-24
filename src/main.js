@@ -10,6 +10,17 @@ import { Controls } from "./controls.js";
 const controls = new Controls();
 import { svgImport } from "./svg-import.js";
 
+const bgMusic = new Audio();
+bgMusic.src = "./audio/Deliberate Thought.mp3";
+bgMusic.oncanplay = () => {
+    window.addEventListener("gamepadconnected", ()=> {
+        bgMusic.play();
+        bgMusic.onended = () => {
+            bgMusic.play();
+        }
+    })
+}
+
 const main2dCanvas = document.createElement("canvas");
 document.body.appendChild(main2dCanvas);
 const mainWebGLCanvas = document.createElement("canvas");
