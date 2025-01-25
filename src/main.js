@@ -404,6 +404,15 @@ const draw = (deltaMs) => {
     camera.applyMatrix();
     ctx.lineCap = "round";
     ctx.lineWidth = 0.5;
+
+    ctx.save();
+    ctx.scale(1, -1);
+    for (const path of level.pathObjects) {
+        ctx.fill(path);
+    }
+    ctx.restore();
+
+    ctx.strokeStyle = "#555";
     myCollisions.arcs.forEach((ad) => {
         ctx.beginPath();
         ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
