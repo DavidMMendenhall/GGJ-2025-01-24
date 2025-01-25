@@ -205,7 +205,7 @@ let arc = (center, radius, arcStart, arcEnd) => {
  */
 /**
  * 
- * @param {[number, number]} param0 
+ * @param {number[]} param0 
  * @param {number} r 
  * @returns {Ball}
  */
@@ -337,5 +337,9 @@ let ball = ([x, y], r) => {
 
 }
 
-export {line, arc, ball, project};
+const CollisionGenerator = {
+    line, arc, ball, project
+}
+
+export {line, arc, ball, project, CollisionGenerator};
 

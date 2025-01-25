@@ -4,8 +4,11 @@ import {
     inverseMatrix3x3,
     vectorMatrix3x3Multiply,
 } from "./matrix.js";
-import { Graphics} from "./webgl/graphics.js";
-
+import { Graphics } from "./webgl/graphics.js";
+import { CollisionGenerator } from "./physics/collision.js";
+import { Controls } from "./controls.js";
+const controls = new Controls();
+import { svgImport } from "./svg-import.js";
 
 const main2dCanvas = document.createElement("canvas");
 document.body.appendChild(main2dCanvas);
@@ -24,8 +27,13 @@ let backgroundPattern = null;
 let backgroundImage = new Image();
 backgroundImage.onload = () => {
     backgroundPattern = ctx.createPattern(backgroundImage, "repeat");
-}
+};
 backgroundImage.src = "/images/background.png";
+
+// load the level
+const level = await fetch("/levels/keyhole.svg")
+    .then((resp) => resp.text())
+    .then((text) => svgImport(text));
 
 const resizeCanvas = () => {
     main2dCanvas.width = main2dCanvas.getBoundingClientRect().width;
@@ -47,9 +55,9 @@ const clear = () => {
     ctx.save();
     ctx.resetTransform();
     // ctx.clearRect(0, 0, main2dCanvas.width, main2dCanvas.height);
-    if(backgroundPattern){
+    if (backgroundPattern) {
         ctx.fillStyle = backgroundPattern;
-    }else{
+    } else {
         ctx.fillStyle = "#FFFFFF";
     }
     ctx.fillRect(0, 0, main2dCanvas.width, main2dCanvas.height);
@@ -194,6 +202,10 @@ const camera = (() => {
         },
         set frameSize(value) {
             frameSize = value;
+            zoom = 2 / frameSize;
+        },
+        get frameSize() {
+            return frameSize;
         },
         center: () => {
             position = target;
@@ -204,16 +216,25 @@ const camera = (() => {
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-let ob = [0, 0];
-let testGlobs = [];
-let testGlobsVel = [];
-for(let i = 0; i < 100; i++){
-    testGlobs.push({
-        radii:[0.2, 0.3],
-        position:[Math.random(), Math.random()],
-    })
-    testGlobsVel.push([Math.random(), Math.random()])
-}
+
+// let ob = [0, 0];
+// let testGlobs = [];
+// let testGlobsVel = [];
+
+// for(let i = 0; i < 100; i++){
+//     testGlobs.push({
+//         radii:[0.2, 0.3],
+//         position:[Math.random(), Math.random()],
+//     })
+//     testGlobsVel.push([Math.random(), Math.random()])
+// }
+
+const myCollisions = level.collisionObjects;
+let player = CollisionGenerator.ball(level.spawnpoint, level.playerRadius);
+let balls = [player];
+let futurePlayer = null;
+let futurePositionDirection = [0, 0];
+
 let oldTime = -1;
 /**
  *
@@ -226,28 +247,86 @@ const frame = (timeMs) => {
         requestAnimationFrame(frame);
         return;
     }
+    camera.frameSize = 10 * level.playerRadius;
     const deltaTimeMs = timeMs - oldTime;
     oldTime = timeMs;
-    ob = [Math.cos(timeMs / 2000), 2 * Math.sin(timeMs / 2000)];
-    camera.target = ob;
-    camera.update(deltaTimeMs);
-    testGlobs.forEach((glob, index)=>{
-        glob.position[0] += deltaTimeMs / 1000 * testGlobsVel[index][0];
-        glob.position[1] += deltaTimeMs / 1000 * testGlobsVel[index][1];
+    controls.update(deltaTimeMs);
+    if (controls.held.has("R1")) {
+        player.velocity = [0, 0];
+        player.center = [0, 0];
+    }
 
-        if(glob.position[0] > 3){
-            testGlobsVel[index][0] = -Math.abs(testGlobsVel[index][0]);
+    if (controls.held.has("L1")) {
+        player.velocity = [0, 0];
+    }
+
+    if (controls.pressed.has("R2")) {
+        futurePlayer = CollisionGenerator.ball(
+            [player.x, player.y],
+            player.r / Math.sqrt(2)
+        );
+        player.r = player.r / Math.sqrt(2);
+
+        balls.push(futurePlayer);
+    }
+
+    if (futurePlayer) {
+        let heldDirection = controls.rightStick;
+        let magnitude = Math.sqrt(
+            heldDirection[0] ** 2 + heldDirection[1] ** 2
+        );
+        if (magnitude > 0.2) {
+            futurePositionDirection = [
+                heldDirection[0] / magnitude,
+                heldDirection[1] / magnitude,
+            ];
         }
-        if(glob.position[0] < -3){
-            testGlobsVel[index][0] = Math.abs(testGlobsVel[index][0]);
+        futurePlayer.center = [
+            player.x + futurePositionDirection[0] * player.r,
+            player.y + futurePositionDirection[1] * player.r,
+        ];
+        if (!controls.held.has("R2")) {
+            // yeet
+            futurePlayer.velocity = [
+                player.velocity[0] +
+                    futurePositionDirection[0] * 8 * level.playerRadius,
+                player.velocity[1] +
+                    futurePositionDirection[1] * 8 * level.playerRadius,
+            ];
+            player = futurePlayer;
+            futurePlayer = null;
         }
-        if(glob.position[1] > 3){
-            testGlobsVel[index][1] = -Math.abs(testGlobsVel[index][1]);
-        }
-        if(glob.position[1] < -3){
-            testGlobsVel[index][1] = Math.abs(testGlobsVel[index][1]);
-        }
-    })
+    }
+
+    camera.target = player.center;
+    camera.update(deltaTimeMs);
+
+    // testGlobs.forEach((glob, index)=>{
+    //     glob.position[0] += deltaTimeMs / 1000 * testGlobsVel[index][0];
+    //     glob.position[1] += deltaTimeMs / 1000 * testGlobsVel[index][1];
+
+    //     if(glob.position[0] > 3){
+    //         testGlobsVel[index][0] = -Math.abs(testGlobsVel[index][0]);
+    //     }
+    //     if(glob.position[0] < -3){
+    //         testGlobsVel[index][0] = Math.abs(testGlobsVel[index][0]);
+    //     }
+    //     if(glob.position[1] > 3){
+    //         testGlobsVel[index][1] = -Math.abs(testGlobsVel[index][1]);
+    //     }
+    //     if(glob.position[1] < -3){
+    //         testGlobsVel[index][1] = Math.abs(testGlobsVel[index][1]);
+    //     }
+    // })
+    player.ax += controls.leftStick[0] * 2 * level.playerRadius;
+    player.ay += controls.leftStick[1] * 2 * level.playerRadius;
+    balls.forEach((element) => {
+        element.update(
+            deltaTimeMs,
+            [...myCollisions.lines, ...myCollisions.arcs],
+            [0, -level.playerRadius]
+        );
+    });
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 };
@@ -260,11 +339,31 @@ const draw = (deltaMs) => {
     clear();
     ctx.save();
     camera.applyMatrix();
-    ctx.fillRect(0, 0, 1, 1);
-    ctx.fillStyle = "orange";
-    ctx.fillRect(ob[0], ob[1], 0.05, 0.05);
+    ctx.lineCap = "round";
+    ctx.lineWidth = 0.5;
+    myCollisions.arcs.forEach((ad) => {
+        ctx.beginPath();
+        ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
+        ctx.stroke();
+    });
+
+    myCollisions.lines.forEach((ld) => {
+        ctx.moveTo(ld.data[0], ld.data[1]);
+        ctx.lineTo(ld.data[2], ld.data[3]);
+    });
+    ctx.stroke();
+
     // camera.renderDebug();
-    Graphics.drawGlobs(gl, camera.getMatrix(), testGlobs,deltaMs, main2dCanvas)
+    Graphics.drawGlobs(
+        gl,
+        camera.getMatrix(),
+        balls.map((ball) => ({
+            position: ball.center,
+            radii: [ball.r, ball.r * 1.1],
+        })),
+        deltaMs,
+        main2dCanvas
+    );
     ctx.restore();
 };
 
