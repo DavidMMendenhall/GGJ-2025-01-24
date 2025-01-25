@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="test-level.svg"
+   inkscape:export-filename="possible-level-format-plain.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="256"
+     inkscape:cx="-0.67382812"
+     inkscape:cy="0.29296875"
+     inkscape:window-width="1918"
+     inkscape:window-height="1059"
+     inkscape:window-x="0"
+     inkscape:window-y="19"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="geometry"
+     inkscape:groupmode="layer"
+     id="layer1" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="collision">
+    <path
+       id="rect1"
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.00367465;stroke-linecap:square;stroke-linejoin:round;stroke-opacity:1;paint-order:stroke fill markers"
+       d="m -0.12928288,-0.39816267 a 0.14158718,0.14163462 0 0 0 -0.14158719,0.141635 0.14158718,0.14163462 0 0 0 0.14158719,0.141635 0.14158718,0.14163462 0 0 0 0.05491596,-0.01148 0.08463984,0.08466821 0 0 0 -0.01304599,0.04512 0.08463984,0.08466821 0 0 0 0.01738098,0.05021 h -0.32813074 v 0.06591 h 0.3902729 a 0.14158718,0.14163462 0 0 0 0.03187197,0.05966 0.08463984,0.08466821 0 0 0 -0.02116998,-0.0027 0.08463984,0.08466821 0 0 0 -0.08463994,0.08467 0.08463984,0.08466821 0 0 0 0.08463994,0.08467 0.08463984,0.08466821 0 0 0 0.08463993,-0.08467 0.08463984,0.08466821 0 0 0 -0.01304599,-0.04512 0.14158718,0.14163462 0 0 0 0.05491596,0.01148 0.14158718,0.14163462 0 0 0 0.14158719,-0.141634 0.14158718,0.14163462 0 0 0 -0.14158719,-0.141636 0.14158718,0.14163462 0 0 0 -0.06038495,0.01431 0.08463984,0.08466821 0 0 0 -0.07171095,-0.03985 0.08463984,0.08466821 0 0 0 -0.02116998,0.0027 0.14158718,0.14163462 0 0 0 0.03187197,-0.05966 h 0.3902338 v -0.06587 h -0.3899589 a 0.14158718,0.14163462 0 0 0 -0.13748599,-0.10938 z"
+       inkscape:label="some-object" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.01;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect4"
+       width="0.23217575"
+       height="0.046435151"
+       x="0.044500351"
+       y="-0.40243796" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="kill">
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.346;stroke-linecap:square;stroke-linejoin:round;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect3"
+       width="27"
+       height="27.318396"
+       x="1.7511792"
+       y="79.853775" />
+  </g>
+</svg>

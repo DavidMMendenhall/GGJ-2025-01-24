@@ -71,16 +71,16 @@ export function svgGetCollisions(group) {
 	};
 
 	for (const rect of group.getElementsByTagName("rect")) {
-		const x1 = rect.x.baseVal;
-		const y1 = rect.y.baseVal;
-		const x2 = x1 + rect.width.baseVal;
-		const y2 = y1 + rect.height.baseVal;
+		const x1 = rect.x.baseVal.value;
+		const y1 = rect.y.baseVal.value;
+		const x2 = x1 + rect.width.baseVal.value;
+		const y2 = y1 + rect.height.baseVal.value;
 
 		result.lines.push(
-			line([x1, y1], [x2, y1]),
-			line([x2, y1], [x2, y2]),
-			line([x2, y2], [x1, y2]),
-			line([x1, y2], [x1, y1]),
+			line([x1, -y1], [x2, -y1]),
+			line([x2, -y1], [x2, -y2]),
+			line([x2, -y2], [x1, -y2]),
+			line([x1, -y2], [x1, -y1]),
 		);
 	}
 
@@ -125,7 +125,7 @@ export function svgGetCollisions(group) {
 					case 'z':
 					case 'Z':
 						if (firstCoords != null) {
-							result.lines.push(line([...previousCoords], [...firstCoords]));
+							result.lines.push(line([previousCoords[0], -previousCoords[1]], [firstCoords[0], firstCoords[-1]]));
 						}
 						break;
 					default:
@@ -153,14 +153,14 @@ export function svgGetCollisions(group) {
 						// add previous y coord if relative
 						numbersBuffer[0] += previousCoords[1];
 					case 'V':
-						result.lines.push(line([...previousCoords], [previousCoords[0], numbersBuffer[0]]));
+						result.lines.push(line([previousCoords[0], -previousCoords[1]], [previousCoords[0], -numbersBuffer[0]]));
 						previousCoords[1] = numbersBuffer[0];
 						break;
 					case 'h':
 						// add previous x coord if relative
 						numbersBuffer[0] += previousCoords[0];
 					case 'H':
-						result.lines.push(line([...previousCoords], [numbersBuffer[0], previousCoords[1]]));
+						result.lines.push(line([previousCoords[0], -previousCoords[1]], [numbersBuffer[0], -previousCoords[1]]));
 						previousCoords[0] = numbersBuffer[0];
 						break;
 					case 'm':
@@ -176,7 +176,7 @@ export function svgGetCollisions(group) {
 						numbersBuffer[0] += previousCoords[0];
 						numbersBuffer[1] += previousCoords[1];
 					case 'L':
-						result.lines.push(line([...previousCoords], [...numbersBuffer]));
+						result.lines.push(line([previousCoords[0], -previousCoords[1]], [numbersBuffer[0], -previousCoords[0]]));
 						previousCoords = [...numbersBuffer];
 						break;
 					case 'a':
@@ -215,7 +215,7 @@ export function svgGetCollisions(group) {
 							}
 						}
 
-						result.arcs.push(arc([...center], radiusX, angleCtoS, angleCtoE));
+						result.arcs.push(arc([center[0], -center[1]], radiusX, -angleCtoE, -angleCtoS));
 
 						previousCoords = [endX, endY];
 

@@ -134,7 +134,7 @@ const draw = (deltaMs) => {
         drawBall(element, "green");
     });
     ctx.lineCap = "round";
-    ctx.lineWidth = 0.05;
+    ctx.lineWidth = 0.005;
     myCollisions.arcs.forEach(ad => {
         ctx.beginPath();
         ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
