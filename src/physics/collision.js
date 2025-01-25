@@ -7,10 +7,12 @@
  * @prop {(point:number[], radius:number)=>boolean} collideCircle
  */
 
+
+
 /**
  * Projects u on to v
- * @param {number[]} u 
- * @param {number[]} v 
+ * @param {[number, number]} u 
+ * @param {[number, number]} v 
  */
 const project = (u, v) => {
     let j = dot(u, v) / (v[0] ** 2 + v[1] ** 2);
@@ -21,11 +23,10 @@ const project = (u, v) => {
 
 /**
  * 
- * @param {number[]} v the vector to normalize
+ * @param {number[]} param0
  * @returns 
  */
-let normalize = (v) => {
-    const [x, y] = v;
+const normalize = ([x, y]) => {
     let mag = Math.sqrt(x ** 2 + y ** 2);
     if (mag === 0){
         return [0, 0];
@@ -185,5 +186,139 @@ let arc = (center, radius, arcStart, arcEnd) => {
     }
 }
 
-export {line, arc, project};
+/**
+ * @typedef Ball
+ * @prop {number} x
+ * @prop {number} y
+ * @prop {number} vx
+ * @prop {number} vy
+ * @prop {number} ax
+ * @prop {number} ay
+ * @prop {number} r
+ * @prop {(ball:Ball) => boolean} collisionCheck_ball
+ * @prop {(deltaMs:number, geometry:Collision[], gravity:number[]) => void} update
+ * @prop {number[]} center 
+ * @prop {number[]} acceleration
+ * @prop {number[]} velocity
+ */
+/**
+ * 
+ * @param {[number, number]} param0 
+ * @param {number} r 
+ * @returns {Ball}
+ */
+let ball = ([x, y], r) => {
+    const cling = 0.01;
+    let ax = 0;
+    let ay = 0;
+    let vx = 0;
+    let vy = 0;
+    /**
+     * 
+     * @param {Ball} otherBall 
+     */
+    const collisionCheck_ball = (otherBall) => {
+        let dx = otherBall.x - x;
+        let dy = otherBall.y - y;
+        return dx ** 2 + dy ** 2 < (r + otherBall.r) ** 2;
+    }
+
+    /**
+     * @param {number} deltaMs
+     * @param {Collision[]} geometry
+     * @param {number[]} gravity
+     */
+    const update = (deltaMs, geometry, gravity) => {
+        const delta = deltaMs /  1000;
+        x += vx * delta / 2;
+        y += vy * delta / 2;
+        vx += ax * delta;
+        vy += ay * delta;
+        x += vx * delta / 2;
+        y += vy * delta / 2;
+        ax = 0;
+        ay = 0;
+        geometry.forEach((collision) => {
+            if(collision.collideCircle([x, y], r)){
+                let repelPoint = collision.nearestPoint([x, y]);
+                let vec = [x - repelPoint[0], y - repelPoint[1]];
+                let distance = Math.sqrt(vec[0] ** 2 + vec[1] ** 2);
+                let dir = normalize(vec);
+                x += dir[0] * (r - distance)
+                y += dir[1] * (r - distance)
+                vx = 0;
+                vy = 0;
+            }
+        })
+    }
+
+    return {
+        get center() {
+            return [x, y];
+        },
+        set center(value) {
+            [x, y] = value;
+        },
+        get acceleration() {
+            return [ax, ay];
+        },
+        set acceleration(value) {
+            [ax, ay] = value;
+        },
+        get velocity() {
+            return [ax, ay];
+        },
+        set velocity(value) {
+            [vx, vy] = value;
+        },
+        get r(){
+            return r;
+        },
+        set r(value){
+            r = value;
+        },
+        get x(){
+            return x;
+        },
+        set x(value){
+            x = value;
+        },
+        get y(){
+            return y;
+        },
+        set y(value){
+            y = value;
+        },
+        get ax(){
+            return ax;
+        },
+        set ax(value){
+            ax = value;
+        },
+        get ay(){
+            return ay;
+        },
+        set ay(value){
+            ay = value;
+        },
+        get vx(){
+            return vx;
+        },
+        set vx(value){
+            vx = value;
+        },
+        get vy(){
+            return vy;
+        },
+        set vy(value){
+            vy = value;
+        },
+        collisionCheck_ball,
+        update,
+    }
+
+
+}
+
+export {line, arc, ball, project};
 

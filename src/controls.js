@@ -80,8 +80,8 @@ export class Controls {
 
 		let [leftX, leftY, rightX, rightY] = this.currentGamepad.axes;
 
-		this.leftStick = [leftX, leftY];
-		this.rightStick = [rightX, rightY];
+		this.leftStick = [leftX, -leftY];
+		this.rightStick = [rightX, -rightY];
 	}
 }
 
