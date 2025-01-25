@@ -3,6 +3,7 @@ precision highp float;
 in vec2 v_pos;
 in vec2 v_center;
 in vec2 v_radius;
+in vec3 v_color;
 out vec4 o_color;
 void main(){
     float dst = length(v_pos - v_center);
@@ -14,5 +15,5 @@ void main(){
     } else if(dst < v_r_outer){
         value = cos(((dst - v_r_inner) / (v_r_outer - v_r_inner) + 1.0) * 3.14159 / 2.0) * 0.5 + 0.5;
     }
-    o_color = vec4(value, 0.0, 0.0, 1.0);
+    o_color = vec4(v_color * value, value);
 }

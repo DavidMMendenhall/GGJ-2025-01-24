@@ -359,7 +359,8 @@ const draw = (deltaMs) => {
         camera.getMatrix(),
         balls.map((ball) => ({
             position: ball.center,
-            radii: [ball.r, ball.r * 1.1],
+            radii: [ball.r, ball.r * 2],
+            color: ball === player ? [0.5,1,0.5]:[0.5,0.25,0.25]
         })),
         deltaMs,
         main2dCanvas

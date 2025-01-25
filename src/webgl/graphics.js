@@ -168,6 +168,7 @@ const startWebgl = async (gl) => {
     vertexBuffers.centers = gl.createBuffer();
     vertexBuffers.radius = gl.createBuffer();
     vertexBuffers.model = gl.createBuffer();
+    vertexBuffers.color = gl.createBuffer();
     vertexBuffers.face = gl.createBuffer();
 
     vertexBuffers.screenPos = gl.createBuffer();
@@ -185,12 +186,14 @@ const startWebgl = async (gl) => {
     const center_loc = gl.getAttribLocation(programs.density, "center");
     const rad_loc = gl.getAttribLocation(programs.density, "radius");
     const model_loc = gl.getAttribLocation(programs.density, "model");
+    const color_loc = gl.getAttribLocation(programs.density, "color");
 
     uniforms.camera = gl.getUniformLocation(programs.density, "camera");
 
     gl.enableVertexAttribArray(pos_loc);
     gl.enableVertexAttribArray(center_loc);
     gl.enableVertexAttribArray(rad_loc);
+    gl.enableVertexAttribArray(color_loc);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers.model);
     gl.bufferData(gl.ARRAY_BUFFER, 3 * 3 * 4, gl.DYNAMIC_DRAW);
@@ -218,6 +221,11 @@ const startWebgl = async (gl) => {
     gl.bufferData(gl.ARRAY_BUFFER, 2 * 4, gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(rad_loc, 2, gl.FLOAT, false, 2 * 4, 0);
     gl.vertexAttribDivisor(rad_loc, 1);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers.color);
+    gl.bufferData(gl.ARRAY_BUFFER, 3 * 4, gl.DYNAMIC_DRAW);
+    gl.vertexAttribPointer(color_loc, 3, gl.FLOAT, false, 3 * 4, 0);
+    gl.vertexAttribDivisor(color_loc, 1);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexBuffers.face);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, diskModel.indices, gl.STATIC_DRAW);
@@ -278,6 +286,7 @@ const resize = (gl) => {
  * @typedef GlobRenderData
  * @prop {number[]} position
  * @prop {number[]} radii
+ * @prop {number[]} color
  *
  */
 
@@ -293,12 +302,16 @@ const drawGlobs = (gl, cameraMatrix, globs, deltaTimeMs,  backgroundSource) => {
     let globModelData = new Float32Array(9 * globs.length);
     let globRadiiData = new Float32Array(2 * globs.length);
     let globCenterData = new Float32Array(2 * globs.length);
+    let globColorData = new Float32Array(3 * globs.length);
 
     globs.forEach((glob, index) => {
         globCenterData[2 * index] = glob.position[0];
         globCenterData[2 * index + 1] = glob.position[1];
         globRadiiData[2 * index] = glob.radii[0];
         globRadiiData[2 * index + 1] = glob.radii[1];
+        globColorData[3 * index + 0] = glob.color[0];
+        globColorData[3 * index + 1] = glob.color[1];
+        globColorData[3 * index + 2] = glob.color[2];
         let scaleMatrix = [
             globRadiiData[1],
             0,
@@ -351,6 +364,9 @@ const drawGlobs = (gl, cameraMatrix, globs, deltaTimeMs,  backgroundSource) => {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers.model);
     gl.bufferData(gl.ARRAY_BUFFER, globModelData, gl.DYNAMIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers.color);
+    gl.bufferData(gl.ARRAY_BUFFER, globColorData, gl.DYNAMIC_DRAW);
     // debugger
     gl.drawElementsInstanced(
         gl.TRIANGLES,
