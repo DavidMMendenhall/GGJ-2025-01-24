@@ -37,5 +37,5 @@ void main(){
     }
     // color.r = 1.0;
     //diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir))
-    o_color = vec4( mix(bg, color * (diffuse + spec + 0.1), (diffuse * 0.5 + 0.5 * (1.0 - dot(gradient, viewDir) + 0.2))), 1.0);
+    o_color = vec4( mix(bg, color * (diffuse + spec + 0.1), (diffuse * 0.35 + 0.35 * (1.0 - dot(gradient, viewDir)))), 1.0);
 }
