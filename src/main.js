@@ -31,12 +31,15 @@ const resizeCanvas = () => {
     mainWebGLCanvas.width = width;
     mainWebGLCanvas.height = height;
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    Graphics.resize(gl);
 };
 
 const clear = () => {
     ctx.save();
     ctx.resetTransform();
-    ctx.clearRect(0, 0, main2dCanvas.width, main2dCanvas.height);
+    // ctx.clearRect(0, 0, main2dCanvas.width, main2dCanvas.height);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, main2dCanvas.width, main2dCanvas.height);
     ctx.restore();
     // TODO code to clear other canvases
 };
@@ -46,7 +49,7 @@ const camera = (() => {
     let target = [0, 0];
     let targetFrameHard = 0.75;
     let targetFrameSoft = 0.5;
-    let frameSize = 3;
+    let frameSize = 10;
     let zoom = 2 / frameSize;
 
     let getMatrix = () => {
@@ -189,6 +192,15 @@ const camera = (() => {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 let ob = [0, 0];
+let testGlobs = [];
+let testGlobsVel = [];
+for(let i = 0; i < 100; i++){
+    testGlobs.push({
+        radii:[0.2, 0.3],
+        position:[Math.random(), Math.random()],
+    })
+    testGlobsVel.push([Math.random(), Math.random()])
+}
 let oldTime = -1;
 /**
  *
@@ -206,6 +218,23 @@ const frame = (timeMs) => {
     ob = [Math.cos(timeMs / 2000), 2 * Math.sin(timeMs / 2000)];
     camera.target = ob;
     camera.update(deltaTimeMs);
+    testGlobs.forEach((glob, index)=>{
+        glob.position[0] += deltaTimeMs / 1000 * testGlobsVel[index][0];
+        glob.position[1] += deltaTimeMs / 1000 * testGlobsVel[index][1];
+
+        if(glob.position[0] > 3){
+            testGlobsVel[index][0] = -Math.abs(testGlobsVel[index][0]);
+        }
+        if(glob.position[0] < -3){
+            testGlobsVel[index][0] = Math.abs(testGlobsVel[index][0]);
+        }
+        if(glob.position[1] > 3){
+            testGlobsVel[index][1] = -Math.abs(testGlobsVel[index][1]);
+        }
+        if(glob.position[1] < -3){
+            testGlobsVel[index][1] = Math.abs(testGlobsVel[index][1]);
+        }
+    })
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 };
@@ -222,7 +251,7 @@ const draw = (deltaMs) => {
     ctx.fillStyle = "orange";
     ctx.fillRect(ob[0], ob[1], 0.05, 0.05);
     camera.renderDebug();
-    Graphics.drawGlobs(gl, camera.getMatrix(), [{radii:[0.2, 0.3], position:ob}, {radii:[0.2, 0.3], position:[0.5, 0.4]}])
+    Graphics.drawGlobs(gl, camera.getMatrix(), testGlobs, main2dCanvas)
     ctx.restore();
 };
 

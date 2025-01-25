@@ -123,6 +123,11 @@ const densityRenderData = {
     texture: null,
 };
 
+/**
+ * @type {Object.<string, null | WebGLTexture>}
+ */
+const textures = {};
+
 /** @type {Object.<string, WebGLProgram>} */
 const programs = {};
 
@@ -153,6 +158,8 @@ const startWebgl = async (gl) => {
         densityRenderData.texture,
         0
     );
+
+    textures.background = buildTexture(gl);
 
     vertexArrayBuffers.density = gl.createVertexArray();
     vertexArrayBuffers.glob = gl.createVertexArray();
@@ -222,6 +229,14 @@ const startWebgl = async (gl) => {
         await fetchFile("/src/webgl/shaders/glob_frag.glsl"),
     ];
     programs.glob = buildProgram(gl, globSource[0], globSource[1]);
+    gl.useProgram(programs.glob);
+    uniforms.backgroundTexture = gl.getUniformLocation(
+        programs.glob,
+        "u_background"
+    );
+    gl.uniform1i(uniforms.backgroundTexture, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.background);
 
     const pos_loc_glob = gl.getAttribLocation(programs.glob, "pos");
 
@@ -239,6 +254,26 @@ const startWebgl = async (gl) => {
 };
 
 /**
+ *
+ * @param {WebGL2RenderingContext} gl
+ */
+const resize = (gl) => {
+    if (densityRenderData.texture) {
+        gl.bindTexture(gl.TEXTURE_2D, densityRenderData.texture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            gl.drawingBufferWidth,
+            gl.drawingBufferHeight,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            null
+        );
+    }
+};
+/**
  * @typedef GlobRenderData
  * @prop {number[]} position
  * @prop {number[]} radii
@@ -251,7 +286,7 @@ const startWebgl = async (gl) => {
  * @param {number[]} cameraMatrix
  * @param {GlobRenderData[]} globs
  */
-const drawGlobs = (gl, cameraMatrix, globs) => {
+const drawGlobs = (gl, cameraMatrix, globs, backgroundSource) => {
     let globModelData = new Float32Array(9 * globs.length);
     let globRadiiData = new Float32Array(2 * globs.length);
     let globCenterData = new Float32Array(2 * globs.length);
@@ -326,6 +361,16 @@ const drawGlobs = (gl, cameraMatrix, globs) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, densityRenderData.texture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.background);
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        backgroundSource
+    );
     gl.useProgram(programs.glob);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
@@ -336,5 +381,6 @@ const drawGlobs = (gl, cameraMatrix, globs) => {
 const Graphics = {
     startWebgl,
     drawGlobs,
+    resize,
 };
 export { Graphics };
