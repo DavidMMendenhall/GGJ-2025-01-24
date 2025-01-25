@@ -1,0 +1,263 @@
+import {line, arc} from "./physics/collision.js";
+const parser = new DOMParser();
+
+/**
+ * @typedef SVGExportedInfo
+ * @property {SVGCollisions} collisionObjects
+ * @property {Path2D} pathObjects
+ */
+
+
+/**
+ * @param {number} x1
+ * @param {number} x2
+ * @param {number} y1
+ * @param {number} y2
+ * @param {number} r
+ * @returns {number[][]}
+ */
+function findArcCenters(x1, y1, x2, y2, r) {
+	// Calculate the midpoint
+	const mx = (x1 + x2) / 2;
+	const my = (y1 + y2) / 2;
+
+	// Calculate the distance between the start and end points
+	const d = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+	// Check if the radius is valid
+	if (d >= 2 * r) {
+		throw new Error("The radius is too small for the given points.");
+	}
+
+	// Calculate the distance from the midpoint to the center
+	const dc = Math.sqrt(r ** 2 - (d / 2) ** 2);
+
+	// Calculate the direction vector
+	const directionX = (x2 - x1) / d;
+	const directionY = (y2 - y1) / d;
+
+	// Calculate the perpendicular vector
+	const perpX = -directionY;
+	const perpY = directionX;
+
+	// Calculate the center of the arc
+	const center1 = [
+		mx + dc * perpX,
+		my + dc * perpY
+	];
+
+	const center2 = [
+		mx - dc * perpX,
+		my - dc * perpY
+	];
+
+	return [center1, center2]; // Return both possible centers
+}
+
+/**
+ * @typedef SVGCollisions
+ * @property {import("./physics/collision.js").Collision[]} lines
+ * @property {import("./physics/collision.js").Collision[]} arcs
+ */
+
+/**
+ * @param {SVGElement} group
+ * @returns {SVGCollisions}
+ */
+export function svgGetCollisions(group) {
+	const result = {
+		lines: [],
+		arcs: [],
+	};
+
+	for (const rect of group.getElementsByTagName("rect")) {
+		const x1 = rect.x.baseVal;
+		const y1 = rect.y.baseVal;
+		const x2 = x1 + rect.width.baseVal;
+		const y2 = y1 + rect.height.baseVal;
+
+		result.lines.push(
+			line([x1, y1], [x2, y1]),
+			line([x2, y1], [x2, y2]),
+			line([x2, y2], [x1, y2]),
+			line([x1, y2], [x1, y1]),
+		);
+	}
+
+	for (const path of group.getElementsByTagName("path")) {
+		let firstCoords = null;
+		let previousCoords = [0, 0];
+		const d = path.getAttribute("d");
+		const segments = d.split(/,\s*|\s+/);
+		/** @type {string | null} */
+		let command = null;
+		let numbersLeft = 0;
+		let prevNumbersLeft = 0;
+		let numbersBuffer = [];
+		let finishedCommand = true;
+		for (const segment of segments) {
+			// if there is no active command or we finished processing a command, then we look for a new command
+			// also mark that we're processing a command and tell the state machine how many numbers to pop
+			if ((command == null || finishedCommand) && isNaN(segment)) {
+				switch (segment) {
+					case 'v':
+					case 'V':
+					case 'h':
+					case 'H':
+						command = segment;
+						finishedCommand = false;
+						prevNumbersLeft = numbersLeft = 1;
+						break;
+					case 'm':
+					case 'M':
+					case 'l':
+					case 'L':
+						command = segment;
+						finishedCommand = false;
+						prevNumbersLeft = numbersLeft = 2;
+						break;
+					case 'a':
+					case 'A':
+						command = segment;
+						finishedCommand = false;
+						prevNumbersLeft = numbersLeft = 7;
+						break;
+					case 'z':
+					case 'Z':
+						if (firstCoords != null) {
+							result.lines.push(line([...previousCoords], [...firstCoords]));
+						}
+						break;
+					default:
+						throw new Error(`command not supported: ${segment}`);
+				}
+
+				continue;
+			}
+
+			// if there is an active command, then we need a number next
+			// get that number
+			if (isNaN(segment)) {
+				throw new Error(`expected number, found ${segment}`);
+			}
+
+			numbersBuffer.push(Number(segment));
+
+			numbersLeft--;
+
+			// if this was the last number that we needed for a command, then we process it
+			if (numbersLeft == 0) {
+				// FINALLY a use case for the fallthrough syntax!! it's only been 10 billion years
+				switch (command) {
+					case 'v':
+						// add previous y coord if relative
+						numbersBuffer[0] += previousCoords[1];
+					case 'V':
+						result.lines.push(line([...previousCoords], [previousCoords[0], numbersBuffer[0]]));
+						previousCoords[1] = numbersBuffer[0];
+						break;
+					case 'h':
+						// add previous x coord if relative
+						numbersBuffer[0] += previousCoords[0];
+					case 'H':
+						result.lines.push(line([...previousCoords], [numbersBuffer[0], previousCoords[1]]));
+						previousCoords[0] = numbersBuffer[0];
+						break;
+					case 'm':
+						numbersBuffer[0] += previousCoords[0];
+						numbersBuffer[1] += previousCoords[1];
+					case 'M':
+						previousCoords = [...numbersBuffer];
+						if (firstCoords == null) {
+							firstCoords = [...previousCoords];
+						}
+						break;
+					case 'l':
+						numbersBuffer[0] += previousCoords[0];
+						numbersBuffer[1] += previousCoords[1];
+					case 'L':
+						result.lines.push(line([...previousCoords], [...numbersBuffer]));
+						previousCoords = [...numbersBuffer];
+						break;
+					case 'a':
+						numbersBuffer[5] += previousCoords[0];
+						numbersBuffer[6] += previousCoords[1];
+					case 'A':
+						const startX = previousCoords[0];
+						const startY = previousCoords[1];
+
+						const [radiusX, radiusY, rotation, large, sweep, endX, endY] = numbersBuffer;
+
+						//if (radiusX != radiusY) {
+						//	throw new Error(`ellipses not supported (${radiusX} != ${radiusY})`);
+						//}
+
+						const [center1, center2] = findArcCenters(
+							startX,
+							startY,
+							endX,
+							endY,
+							radiusX,
+						)
+
+						const center = sweep == 0 ? center2 : center1;
+
+						const angleCtoS = Math.atan2(center1[1] - startY, center1[0] - startX);
+						const angleCtoE = Math.atan2(center1[1] - endY, center1[0] - endX);
+
+						if (angleCtoE - angleCtoS > Math.PI) {
+							if (!large) {
+								[angleCtoS, angleCtoE] = [angleCtoE, angleCtoS];
+							}
+						} else {
+							if (large) {
+								[angleCtoS, angleCtoE] = [angleCtoE, angleCtoS];
+							}
+						}
+
+						result.arcs.push(arc([...center], radiusX, angleCtoS, angleCtoE));
+
+						previousCoords = [endX, endY];
+
+						break;
+					default:
+						throw new Error(`command not supported: ${segment}`);
+				}
+
+				numbersBuffer = [];
+				numbersLeft = prevNumbersLeft;
+
+				finishedCommand = true;
+			}
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @param {string} svgText
+ * @returns {SVGExportedInfo}
+ */
+export function svgImport(svgText) {
+	const svgDocument = parser.parseFromString(svgText, "text/xml");
+
+	const groups = svgDocument.getElementsByTagName("g");
+
+	/** @type SVGExportedInfo */
+	const result = {
+		collisionObjects: null,
+		pathObjects: [],
+	}
+
+	for (const group of groups) {
+		let label = group.getAttribute("inkscape:label");
+
+		switch (label) {
+			case "collision":
+				result.collisionObjects = svgGetCollisions(group);
+		}
+	}
+
+	return result;
+}
