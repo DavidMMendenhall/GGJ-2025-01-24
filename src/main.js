@@ -4,12 +4,19 @@ import {
     inverseMatrix3x3,
     vectorMatrix3x3Multiply,
 } from "./matrix.js";
+import { Graphics} from "./webgl/graphics.js";
 const main2dCanvas = document.createElement("canvas");
 document.body.appendChild(main2dCanvas);
-
+const mainWebGLCanvas = document.createElement("canvas");
+document.body.appendChild(mainWebGLCanvas);
+mainWebGLCanvas.style.zIndex = "5";
 /** @type {CanvasRenderingContext2D} */
 // @ts-ignore
 const ctx = main2dCanvas.getContext("2d");
+/** @type {WebGL2RenderingContext} */
+// @ts-ignore
+const gl = mainWebGLCanvas.getContext("webgl2");
+
 
 const resizeCanvas = () => {
     main2dCanvas.width = main2dCanvas.getBoundingClientRect().width;
@@ -20,6 +27,10 @@ const resizeCanvas = () => {
     ctx.translate(width / 2, height / 2);
     // Scale to normalize the coordinate space to -1 to 1
     ctx.scale(width / 2, -height / 2);
+
+    mainWebGLCanvas.width = width;
+    mainWebGLCanvas.height = height;
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 };
 
 const clear = () => {
@@ -159,6 +170,7 @@ const camera = (() => {
     };
     return {
         getMatrix,
+        getInverse,
         applyMatrix,
         renderDebug,
         set target(value) {
@@ -191,7 +203,7 @@ const frame = (timeMs) => {
     }
     const deltaTimeMs = timeMs - oldTime;
     oldTime = timeMs;
-    ob = [2 * Math.cos(timeMs / 2000), 2 * Math.sin(timeMs / 2000)];
+    ob = [Math.cos(timeMs / 2000), 2 * Math.sin(timeMs / 2000)];
     camera.target = ob;
     camera.update(deltaTimeMs);
     draw(deltaTimeMs);
@@ -210,7 +222,9 @@ const draw = (deltaMs) => {
     ctx.fillStyle = "orange";
     ctx.fillRect(ob[0], ob[1], 0.05, 0.05);
     camera.renderDebug();
+    Graphics.drawGlobs(gl, camera.getMatrix(), [{radii:[0.2, 0.3], position:ob}, {radii:[0.2, 0.3], position:[0.5, 0.4]}])
     ctx.restore();
 };
 
+await Graphics.startWebgl(gl);
 requestAnimationFrame(frame);

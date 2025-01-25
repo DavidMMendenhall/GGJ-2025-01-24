@@ -1,4 +1,13 @@
 // @ts-check
+
+let matrix3x3Transpose = (mat) => {
+    return [
+        mat[0], mat[3], mat[6],
+        mat[1], mat[4], mat[7],
+        mat[2], mat[5], mat[8],
+    ]
+}
+
 /**
  *
  * @param {number[]} mat
@@ -66,4 +75,4 @@ let inverseMatrix3x3 = (matrix) => {
     return inverse;
 };
 
-export { inverseMatrix3x3, matrix3x3Multiply, vectorMatrix3x3Multiply };
+export { inverseMatrix3x3, matrix3x3Multiply, vectorMatrix3x3Multiply, matrix3x3Transpose };
