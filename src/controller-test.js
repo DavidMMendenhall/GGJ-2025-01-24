@@ -16,6 +16,8 @@ function update(timestamp) {
 	message += " ";
 	message += Math.atan2(c.rightStick[0], c.rightStick[1]) * 180 / (Math.PI);
 
+	document.getElementById("text").innerHTML = message;
+
 	requestAnimationFrame(update);
 }
 
