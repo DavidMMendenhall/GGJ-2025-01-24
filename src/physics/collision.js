@@ -11,8 +11,8 @@
 
 /**
  * Projects u on to v
- * @param {[number, number]} u 
- * @param {[number, number]} v 
+ * @param {number[]} u 
+ * @param {number[]} v 
  */
 const project = (u, v) => {
     let j = dot(u, v) / (v[0] ** 2 + v[1] ** 2);
@@ -93,7 +93,7 @@ let line = (p1 , p2) => {
         if( Math.abs(bisectPlaneDst) > length / 2){
             return bisectPlaneDst < 0 ? pointDistance([x1, y1], p) : pointDistance([x0, y0], p);
         }
-        return linePlaneDst;
+        return Math.abs(linePlaneDst);
         
     }
 
@@ -138,7 +138,6 @@ let line = (p1 , p2) => {
  * @returns {Collision}
  */
 let arc = (center, radius, arcStart, arcEnd) => {
-    let clockwise = arcStart > arcEnd;
     let centerAngle = (arcStart + arcEnd) * 0.5;
     let centerVector = [Math.cos(centerAngle), Math.sin(centerAngle)];
     let startVector = [Math.cos(arcStart), Math.sin(arcStart)];
@@ -151,7 +150,7 @@ let arc = (center, radius, arcStart, arcEnd) => {
     const distance = (p) => {
         let dir = normalize([p[0] - center[0], p[1] - center[1]]);
         if(minDot < dot(dir, centerVector)){
-            return pointDistance(p, center) - radius;
+            return Math.abs(pointDistance(p, center) - radius);
         }
         
         return pointDistance(p, nearestPoint(p));
@@ -208,7 +207,10 @@ let arc = (center, radius, arcStart, arcEnd) => {
  * @returns {Ball}
  */
 let ball = ([x, y], r) => {
-    const cling = 0.01;
+    const snapDistance = 0.075;
+    const snapEscapeSpeed = 0.1;
+    const snapForce = 5;
+    const airResistance = 0.5;
     let ax = 0;
     let ay = 0;
     let vx = 0;
@@ -236,8 +238,11 @@ let ball = ([x, y], r) => {
         vy += ay * delta;
         x += vx * delta / 2;
         y += vy * delta / 2;
-        ax = 0;
-        ay = 0;
+        ax = -vx * airResistance;
+        ay = -vy * airResistance;
+        ax += gravity[0];
+        ay += gravity[1];
+        let speed = Math.sqrt(vx ** 2 + vy ** 2);
         geometry.forEach((collision) => {
             if(collision.collideCircle([x, y], r)){
                 let repelPoint = collision.nearestPoint([x, y]);
@@ -246,8 +251,17 @@ let ball = ([x, y], r) => {
                 let dir = normalize(vec);
                 x += dir[0] * (r - distance)
                 y += dir[1] * (r - distance)
-                vx = 0;
-                vy = 0;
+                let comp = project([vx, vy], vec);
+
+                vx -= comp[0];
+                vy -= comp[1];
+            } else if(collision.distance([x, y]) < r + snapDistance){
+                let attractPoint = collision.nearestPoint([x, y]);
+                let vec = [x - attractPoint[0], y - attractPoint[1]];
+                let distance = Math.sqrt(vec[0] ** 2 + vec[1] ** 2);
+                let dir = normalize(vec);
+                ax -= dir[0] * (snapDistance - (r - distance)) * snapForce
+                ay -= dir[1] * (snapDistance - (r - distance)) * snapForce
             }
         })
     }
