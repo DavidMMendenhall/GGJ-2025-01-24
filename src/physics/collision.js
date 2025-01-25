@@ -5,6 +5,7 @@
  * @prop {(point:number[])=>number} distance
  * @prop {(point:number[])=>number[]} nearestPoint
  * @prop {(point:number[], radius:number)=>boolean} collideCircle
+ * @prop {number[]} data
  */
 
 
@@ -126,6 +127,7 @@ let line = (p1 , p2) => {
         distance,
         nearestPoint,
         collideCircle,
+        data: [x0, y0, x1, y1],
     }
 }
 
@@ -182,6 +184,7 @@ let arc = (center, radius, arcStart, arcEnd) => {
         distance,
         nearestPoint,
         collideCircle,
+        data: [center[0], center[1], radius, arcStart, arcEnd],
     }
 }
 
