@@ -5,6 +5,7 @@ const parser = new DOMParser();
  * @typedef SVGLevel
  * @property {SVGCollisions} collisionObjects
  * @property {SVGCollisions} killObjects
+ * @property {SVGCollisions} winObjects
  * @property {Path2D[]} pathObjects
  * @property {number[]} bounds
  * @property {number[]} spawnpoint
@@ -185,6 +186,7 @@ export function svgGetCollisions(group) {
 						if (firstCoords == null) {
 							firstCoords = [...previousCoords];
 						}
+						command = command == 'm' ? 'l' : 'L';
 						break;
 					case 'l':
 						numbersBuffer[0] += previousCoords[0];
@@ -276,6 +278,7 @@ export function svgImport(svgText) {
 		collisionObjects: null,
 		killObjects: null,
 		pathObjects: [],
+		winObjects: null,
 		bounds: [bx1, -by1, bx2, -by2],
 		spawnpoint,
 		playerRadius
@@ -298,6 +301,8 @@ export function svgImport(svgText) {
 			case "kill":
 				result.killObjects = svgGetCollisions(group);
 				break;
+			case "win":
+				result.winObjects = svgGetCollisions(group);
 		}
 	}
 

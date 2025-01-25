@@ -1,4 +1,7 @@
 // @ts-check
+
+window.DEBUG = false;
+
 import {
     matrix3x3Multiply,
     inverseMatrix3x3,
@@ -20,6 +23,7 @@ bgMusic.oncanplay = () => {
         }
     })
 }
+let isWin = false;
 
 const main2dCanvas = document.createElement("canvas");
 document.body.appendChild(main2dCanvas);
@@ -40,6 +44,17 @@ backgroundImage.onload = () => {
     backgroundPattern = ctx.createPattern(backgroundImage, "repeat");
 };
 backgroundImage.src = "/images/background.png";
+
+let marblePattern = null;
+let marbleImage = new Image();
+marbleImage.onload = () => {
+    marblePattern = ctx.createPattern(marbleImage, "repeat");
+    marblePattern.setTransform({a: 0.25, d: 0.25});
+};
+marbleImage.src = "/images/marble.jpg";
+
+const bubbleSound = new Audio();
+bubbleSound.src = "/audio/pop.mp3";
 
 // load the level
 const level = await fetch("/levels/keyhole.svg")
@@ -367,19 +382,45 @@ const frame = (timeMs) => {
                 }
             }
         }
-        
+
+        for (const kill of [...level.killObjects.arcs, ...level.killObjects.lines]) {
+            if (kill.collideCircle(ball.center, ball.r)) {
+                ballsToRemove.add(ball);
+                for(let k = 0; k < 10; k++){
+                    particleGlobs.add(
+                        {
+                            position:[(Math.random() * 2 - 1) * ball.r + ball.x, (Math.random() * 2 - 1) * ball.r + ball.y],
+                            radii: [ball.r, ball.r * 1.2],
+                            color: [1, 1, 1],
+                        }
+                    )
+                }
+            }
+        }
+
+        for (const win of [...level.winObjects.arcs, ...level.winObjects.lines]) {
+            if (win.collideCircle(ball.center, ball.r)) {
+                isWin = true;
+            }
+        }
     });
 
-  
+    if (ballsToRemove.size) {
+        bubbleSound.play();
+    }
+
     for(let i = 0; i < balls.length; i++){
         if(ballsToRemove.has(balls[i])){
             balls.splice(i, 1);
             i--;
             ballsToRemove.delete(balls[i])
-
         }
-
     }
+
+    if (balls.indexOf(player) == -1 && balls.length != 0) {
+        player = balls[balls.length - 1];
+    }
+
     let globsToRemove = new Set();
     particleGlobs.forEach((glob) => {
         glob.radii[0] *= 0.95;
@@ -390,6 +431,7 @@ const frame = (timeMs) => {
     })
 
     globsToRemove.forEach((g) => particleGlobs.delete(g));
+
     draw(deltaTimeMs);
     requestAnimationFrame(frame);
 };
@@ -408,22 +450,35 @@ const draw = (deltaMs) => {
     ctx.save();
     ctx.scale(1, -1);
     for (const path of level.pathObjects) {
+        ctx.fillStyle = marblePattern;
         ctx.fill(path);
     }
     ctx.restore();
 
-    ctx.strokeStyle = "#555";
-    myCollisions.arcs.forEach((ad) => {
-        ctx.beginPath();
-        ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
-        ctx.stroke();
-    });
+    if (window.DEBUG) {
+        ctx.strokeStyle = "#555";
+        myCollisions.arcs.forEach((ad) => {
+            ctx.beginPath();
+            ctx.arc(ad.data[0], ad.data[1], ad.data[2], ad.data[3], ad.data[4]);
+            ctx.stroke();
+        });
 
-    myCollisions.lines.forEach((ld) => {
-        ctx.moveTo(ld.data[0], ld.data[1]);
-        ctx.lineTo(ld.data[2], ld.data[3]);
-    });
-    ctx.stroke();
+        myCollisions.lines.forEach((ld) => {
+            ctx.moveTo(ld.data[0], ld.data[1]);
+            ctx.lineTo(ld.data[2], ld.data[3]);
+        });
+        ctx.stroke();
+    }
+
+    if (isWin) {
+        ctx.save();
+        ctx.resetTransform();
+        ctx.font = "100px Margarine";
+        ctx.fillStyle = "#0FF";
+        let tw = ctx.measureText("YOU WIN");
+        ctx.fillText("YOU WIN", main2dCanvas.width / 2 - tw.width / 2, main2dCanvas.height / 2 + 20);
+        ctx.restore();
+    }
 
     // camera.renderDebug();
     Graphics.drawGlobs(
