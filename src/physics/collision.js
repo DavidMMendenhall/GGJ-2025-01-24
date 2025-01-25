@@ -210,7 +210,7 @@ let arc = (center, radius, arcStart, arcEnd) => {
  * @returns {Ball}
  */
 let ball = ([x, y], r) => {
-    const snapDistance = 0.075;
+    const snapDistance = 10;
     const snapEscapeSpeed = 0.1;
     const snapForce = 5;
     const airResistance = 0.5;
@@ -245,6 +245,11 @@ let ball = ([x, y], r) => {
         ay = -vy * airResistance;
         ax += gravity[0];
         ay += gravity[1];
+
+        let snapForceX = 0;
+        let snapForceY = 0;
+        let forceDistance = Infinity;
+
         let speed = Math.sqrt(vx ** 2 + vy ** 2);
         geometry.forEach((collision) => {
             if(collision.collideCircle([x, y], r)){
@@ -258,15 +263,32 @@ let ball = ([x, y], r) => {
 
                 vx -= comp[0];
                 vy -= comp[1];
-            } else if(collision.distance([x, y]) < r + snapDistance){
-                let attractPoint = collision.nearestPoint([x, y]);
-                let vec = [x - attractPoint[0], y - attractPoint[1]];
-                let distance = Math.sqrt(vec[0] ** 2 + vec[1] ** 2);
-                let dir = normalize(vec);
-                ax -= dir[0] * (snapDistance - (r - distance)) * snapForce
-                ay -= dir[1] * (snapDistance - (r - distance)) * snapForce
+            } 
+            if(collision.distance([x, y]) < r + snapDistance){
+                let d = Math.abs(collision.distance([x, y]));
+                if (d < forceDistance){
+                    forceDistance = d;
+                    let attractPoint = collision.nearestPoint([x, y]);
+                    let vec = [attractPoint[0] - x, attractPoint[1] - y];
+                    let dir = normalize(vec);
+
+                    snapForceX = (1 - (d - r) / snapDistance) ** 2 * snapForce * dir[0]
+                    snapForceY = (1 - (d - r) / snapDistance) ** 2 * snapForce * dir[1]
+                    // console.log(snapForceX)
+                }
+               
+                
+                
             }
         })
+        // console.log(snapForceX, snapForceY)
+        let totalForce = Math.sqrt(snapForceX ** 2 + snapForceY ** 2);
+        if(totalForce > snapForce ){
+            snapForceX = snapForceX / totalForce * snapForce;
+            snapForceY = snapForceY / totalForce * snapForce;
+        }
+        ax += snapForceX;
+        ay += snapForceY;
     }
 
     return {

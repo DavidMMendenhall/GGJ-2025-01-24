@@ -235,7 +235,6 @@ let player = CollisionGenerator.ball(level.spawnpoint, level.playerRadius);
 let balls = [player];
 let futurePlayer = null;
 let futurePositionDirection = [0, 0];
-
 let oldTime = -1;
 /**
  *
@@ -248,13 +247,19 @@ const frame = (timeMs) => {
         requestAnimationFrame(frame);
         return;
     }
-    camera.frameSize = 10 * level.playerRadius;
+    camera.frameSize = 20 * level.playerRadius;
     const deltaTimeMs = timeMs - oldTime;
     oldTime = timeMs;
     controls.update(deltaTimeMs);
     if (controls.held.has("R1")) {
         player.velocity = [0, 0];
-        player.center = [0, 0];
+        player.center = level.spawnpoint;
+        player.r = level.playerRadius;
+        while(balls.length > 0 ){
+            balls.splice(0, balls.length);
+        }
+        balls = [player]
+        futurePlayer = null;
     }
 
     if (controls.held.has("L1")) {
